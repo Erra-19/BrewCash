@@ -15,6 +15,13 @@ class ProductController extends Controller
      */
     public function index()
     {
+        if (!session('active_store_id')) {
+            $products = collect();
+        } else {
+            $products = Product::where('store_id', session('active_store_id'))
+                ->orderBy('product_id', 'desc')
+                ->get();
+        }
         $products = Product::orderBy('product_id', 'desc')->get();
         return view('backend.v_product.index', [
             'title' => 'Product',
@@ -29,6 +36,9 @@ class ProductController extends Controller
     public function create()
     {
         $categories = ProductCategory::orderBy('category_name', 'asc')->get();
+        if (!session('active_store_id')) {
+            return redirect()->route('backend.store.index')->with('error', 'Please activate a store first!');
+        }
         return view('backend.v_product.create', [
             'title' => 'Product',
             'sub' => 'Add Product',
@@ -41,6 +51,10 @@ class ProductController extends Controller
      */
     public function store(Request $request)
     {
+        if (!session('active_store_id')) {
+            return redirect()->route('backend.store.index')->with('error', 'Please activate a store first!');
+        }
+        $store_id = session('active_store_id');
         $validatedData = $request->validate([
             'category_id'   => 'required|exists:product_categories,category_id',
             'product_name'  => 'required|max:255|unique:products,product_name',
@@ -66,6 +80,8 @@ class ProductController extends Controller
 
             $validatedData['product_image'] = $originalFileName;
         }
+
+        $validatedData['store_id'] = $store_id;
 
         Product::create($validatedData);
         return redirect()->route('backend.product.index')->with('success', 'Your Product has Been Saved');

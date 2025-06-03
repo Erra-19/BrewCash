@@ -6,16 +6,18 @@
                 @if(session('success'))
                     <div class="alert alert-success">{{ session('success') }}</div>
                 @endif
-
-                @if($category->isEmpty())
+            
+                @if(!session('active_store_id'))
+                    <div class="alert alert-warning mt-3">You must activate a store to view categories.</div>
+                @elseif($category->isEmpty())
                     <div class="text-center my-5">
                         <h4>You haven't registered any category yet.</h4>
                         <a href="{{ route('backend.category.create') }}" class="btn btn-lg btn-success mt-3">Register Your First Category</a>
                     </div>
                 @else
-                <h5 class="card-title">{{ $title ?? 'Category' }}<br><br>
-                    <a href="{{ route('backend.category.create') }}"class="btn btn-outline-primary">Add Category</a>
-                </h5>
+                    <h5 class="card-title">{{ $title ?? 'Category' }}<br><br>
+                        <a href="{{ route('backend.category.create') }}" class="btn btn-outline-primary">Add Category</a>
+                    </h5>
                     <div class="row">
                         @foreach($category as $category)
                             <div class="col-md-4 mb-4">

@@ -40,6 +40,11 @@
                 <input type="password" name="password" placeholder="Password" required autocomplete="current-password">
             </div>
             <button type="submit" class="login-btn">Log In</button>
+            <div style="text-align:center; margin-top:18px;">
+                <a href="{{ route('frontend.staff.forgot') }}" style="color:#ff0000; font-family:'Rokkit',serif; font-size:15px; text-decoration:underline;">
+                    Forgot password?
+                </a>
+            </div>
         </form>
     </div>
 </body>

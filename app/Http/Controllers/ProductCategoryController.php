@@ -12,10 +12,16 @@ class ProductCategoryController extends Controller
      */
     public function index()
     {
-        $category = ProductCategory::orderBy('category_id', 'desc')->get();
+        if (!session('active_store_id')) {
+            $categories = collect();
+        } else {
+            $categories = ProductCategory::where('store_id', session('active_store_id'))
+                ->orderBy('category_id', 'desc')
+                ->get();
+        }
         return view('backend.v_category.index', [
             'title' => 'Category',
-            'category' => $category
+            'category' => $categories
         ]);
     }
 
@@ -24,6 +30,9 @@ class ProductCategoryController extends Controller
      */
     public function create()
     {
+        if (!session('active_store_id')) {
+            return redirect()->route('backend.store.index')->with('error', 'Please activate a store first!');
+        }
         return view('backend.v_category.create', [
             'title' => 'Add category',
         ]);
@@ -34,11 +43,17 @@ class ProductCategoryController extends Controller
      */
     public function store(Request $request)
     {
-        // dd($request);
+        if (!session('active_store_id')) {
+            return redirect()->route('backend.store.index')->with('error', 'Please activate a store first!');
+        }
+        $store_id = session('active_store_id');
         $validatedData = $request->validate([
             'category_name' => 'required|max:255|unique:product_categories,category_name',
         ]);
-        ProductCategory::create($validatedData);
+        ProductCategory::create([
+            'category_name' => $validatedData['category_name'],
+            'store_id' => $store_id,
+        ]);
         return redirect()->route('backend.category.index')->with('success', 'Data succesfully saved');
     }
 

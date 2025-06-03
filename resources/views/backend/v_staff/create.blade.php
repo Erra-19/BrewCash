@@ -37,7 +37,7 @@
                     {{-- Custom Role for This Store --}}
                     <div class="form-group">
                         <label>Role in this store</label>
-                        <input type="text" name="store_role" value="{{ old('store_role') }}" class="form-control @error('store_role') is-invalid @enderror" placeholder="Insert Your Staff Role In This Store">
+                        <input type="text" name="store_role" value="{{ old('store_role') }}" class="form-control @error('store_role') is-invalid @enderror" placeholder="e.g., Cashier, Barista, Manager">
                         @error('store_role')
                         <span class="invalid-feedback alert-danger" role="alert">{{ $message }}</span>
                         @enderror
@@ -45,8 +45,8 @@
     
                     {{-- Password --}}
                     <div class="form-group">
-                        <label>Password</label>
-                        <input type="password" name="password" class="form-control @error('password') is-invalid @enderror" placeholder="Insert Password">
+                        <label>Password <small class="text-muted">(Optional, leave blank for default)</small></label>
+                        <input type="password" name="password" class="form-control @error('password') is-invalid @enderror" placeholder="Insert Password or leave blank">
                         @error('password')
                         <span class="invalid-feedback alert-danger" role="alert">{{ $message }}</span>
                         @enderror
@@ -60,8 +60,8 @@
                 </div>
                 <div class="border-top">
                     <div class="card-body">
-                        <button type="submit" class="btn btn-primary">Simpan</button>
-                        <a href="{{ route('backend.store.show', $store->store_id) }}"class="btn btn-secondary">Kembali</a>
+                        <button type="submit" class="btn btn-primary">Save</button>
+                        <a href="{{ route('backend.store.show', $store->store_id) }}"class="btn btn-secondary">Back</a>
                     </div>
                 </div>
             </form>

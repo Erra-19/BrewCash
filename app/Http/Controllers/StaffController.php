@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\Store;
 use App\Models\UserStore;
+use Illuminate\Support\Str; // Import the Str class
 
 class StaffController extends Controller
 {
@@ -32,9 +33,17 @@ class StaffController extends Controller
             'name'         => 'required|string|max:255',
             'email'        => 'required|email|unique:users,email',
             'phone_number' => 'required|string|max:20',
-            'password'     => 'required|string|min:6|confirmed',
+            'password'     => 'nullable|string|min:6|confirmed', // 'confirmed' will look for a 'password_confirmation' field
             'store_role'   => 'required|string|max:100',
         ]);
+
+        // Determine the password
+        if (!empty($validatedData['password'])) {
+            $password = $validatedData['password'];
+        } else {
+            // Generate the default password if none is provided
+            $password = $this->generateDefaultPassword($store->store_id, $validatedData['store_role']);
+        }
 
         // Create the user as staffs
         $user = User::create([
@@ -42,7 +51,7 @@ class StaffController extends Controller
             'email'        => $validatedData['email'],
             'phone_number' => $validatedData['phone_number'],
             'role'         => 'Staff',
-            'password'     => bcrypt($validatedData['password']),
+            'password'     => bcrypt($password), // Use the determined password
             'status'       => 1,
         ]);
 
@@ -54,9 +63,45 @@ class StaffController extends Controller
         ]);
 
         return redirect()->route('backend.store.show', $store->store_id)
-            ->with('success', 'staffs registered successfully!');
+            ->with('success', 'Staffs registered successfully! Default password has been set if you left the password field blank.');
     }
 
+    /**
+     * Generates a default password for a new staff member.
+     * Format: ST<XX><001>! (e.g., STCA001!)
+     *
+     * @param string $store_id
+     * @param string $store_role
+     * @return string
+     */
+    private function generateDefaultPassword(string $store_id, string $store_role): string
+    {
+        // 1. Get the prefix "ST"
+        $prefix = 'ST';
+
+        // 2. Get the first two letters of the store role, in uppercase.
+        $roleInitials = strtoupper(Str::substr($store_role, 0, 2));
+
+        // 3. Find the number of existing staff with the same role in the same store.
+        $staffCount = UserStore::where('store_id', $store_id)
+                               ->where('store_role', $store_role)
+                               ->count();
+        
+        // The new staff will be the next number in sequence.
+        $nextNumber = $staffCount + 1;
+
+        // 4. Pad the number with leading zeros to make it 3 digits long.
+        $paddedNumber = str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
+
+        // 5. Add the suffix "!"
+        $suffix = '!';
+
+        // 6. Combine all parts to create the final password.
+        return $prefix . $roleInitials . $paddedNumber . $suffix;
+    }
+
+    // ... (the rest of your controller methods: index, edit, update, destroy)
+    
     /**
      * List all staffs for a given store.
      */

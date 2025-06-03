@@ -80,7 +80,7 @@
                                         <span class="input-group-text bg-secondary text-white" id="basic-addon3"><i class="ti-image"></i></span>
                                     </div>
                                     <div class="custom-file">
-                                        <input type="file" class="custom-file-input @error('picture') is-invalid @enderror" id="inputGroupFile01" aria-describedby="inputGroupFileAddon01" name="picture">
+                                        <input type="file" class="custom-file-input @error('picture') is-invalid @enderror" id="inputGroupFile01" name="picture" accept="image/jpeg, image/png, image/jpg">
                                         <label class="custom-file-label" for="inputGroupFile01">Choose file</label>
                                     </div>
                                     @error('picture')

@@ -29,6 +29,17 @@
                                         @method('DELETE')
                                         <button type="submit" class="btn btn-danger btn-sm">Delete</button>
                                     </form>
+                                    @php
+                                        $activeStoreId = session('active_store_id');
+                                    @endphp
+                                    @if($activeStoreId !== $store->store_id)
+                                        <form method="POST" action="{{ route('backend.store.activate', $store->store_id) }}">
+                                            @csrf
+                                            <button type="submit" class="btn btn-success btn-sm ml-2">Activate</button>
+                                        </form>
+                                    @else
+                                        <span class="badge badge-success ml-2">Active</span>
+                                    @endif
                                 </div>
                             </div>
                         </div>

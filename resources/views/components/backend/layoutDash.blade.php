@@ -26,6 +26,12 @@
 </head>
 
 <body>
+    @php
+        $activeStore = null;
+        if (session('active_store_id')) {
+            $activeStore = \App\Models\Store::find(session('active_store_id'));
+        }
+    @endphp
     <!-- ============================================================== -->
     <!-- Preloader - style you can find in spinners.css -->
     <!-- ============================================================== -->
@@ -87,6 +93,17 @@
                     <!-- ============================================================== -->
                     <ul class="navbar-nav float-left mr-auto">
                         <li class="nav-item d-none d-md-block"><a class="nav-link sidebartoggler waves-effect waves-light" href="javascript:void(0)" data-sidebartype="mini-sidebar"><i class="mdi mdi-menu font-24"></i></a></li>
+                        <div class="mx-auto d-none d-md-block" style="position:absolute;left:50%;transform:translateX(-50%);z-index:1;">
+                            @if($activeStore)
+                                <span class="h5 text-white">{{ $activeStore->store_name }}</span>
+                                <form action="{{ route('backend.store.deactivate') }}" method="POST" style="margin-top: 0.5rem;">
+                                    @csrf
+                                    <button class="btn btn-sm btn-danger" type="submit">Deactivate</button>
+                                </form>
+                            @else
+                                <span class="text-muted">No Store Selected</span>
+                            @endif
+                        </div>
                         <!-- ============================================================== -->
                         <!-- create new -->
                         <!-- ============================================================== -->

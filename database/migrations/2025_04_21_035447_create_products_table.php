@@ -18,7 +18,10 @@ return new class extends Migration
             $table->unsignedBigInteger('category_id');
             $table->decimal('product_price', 10, 0);
             $table->tinyInteger('is_available');
+            $table->string('store_id');
+            $table->foreign('store_id')->references('store_id')->on('stores')->onDelete('cascade');
             $table->foreign('category_id')->references('category_id')->on('product_categories')->onDelete('cascade');
+            $table->index('store_id');
             $table->index('category_id');
             $table->timestamps();
         });

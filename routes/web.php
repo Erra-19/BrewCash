@@ -42,6 +42,8 @@ Route::middleware('auth')->group(function () {
     Route::get('backend/dashboard', [DashboardController::class, 'dashBackend'])->name('backend.dashboard');
     //store CRUD
     Route::resource('backend/store', StoreController::class, ['as' => 'backend']);
+    Route::post('backend/store/{store}/activate', [StoreController::class, 'activate'])->name('backend.store.activate');
+    Route::post('backend/store/deactivate', [StoreController::class, 'deactivate'])->name('backend.store.deactivate');
     //category CRUD
     Route::resource('backend/category', ProductCategoryController::class, ['as' => 'backend']);
     //product CRUD
@@ -54,6 +56,7 @@ Route::middleware('auth')->group(function () {
     // AJAX for modifiers by category
     Route::post('backend/product/modifiers-by-category', [ProductModifierController::class, 'modifiersByCategory'])->name('backend.product.modifiers_by_category');
     Route::get('backend/logs', [LogController::class, 'index'])->name('backend.logs.index');
+    Route::post('/backend/staff/{store_id}/{user_id}/reset-password', [StaffController::class, 'resetPassword'])->name('backend.staff.resetpassword');
     //frontend HOME
     Route::get('front/dashboard', [CashierController::class, 'index'])->name('front.dashboard');
     // orders
@@ -83,8 +86,23 @@ Route::prefix('backend/store/{store_id}')->middleware('auth')->group(function ()
 Route::get('brewcash/login', [FrontLoginController::class, 'showLoginForm'])->name('frontend.login');
 Route::post('brewcash/login', [FrontLoginController::class, 'login'])->name('frontend.login.submit');
 Route::post('brewcash/logout', [FrontLoginController::class, 'logout'])->name('frontend.logout');
+Route::post('/backend/staff/{store_id}/{user_id}/reset-password', [FrontLoginController::class, 'resetPassword'])->name('backend.staff.resetpassword');
+// web.php
+Route::get('/staff/forgot', [FrontLoginController::class, 'showForgotForm'])->name('frontend.staff.forgot');
+Route::post('/staff/forgot', [FrontLoginController::class, 'processForgot'])->name('frontend.staff.forgot.process');
 
 // Add these routes to your web.php
 Route::post('/orders/{orderId}/pay', [\App\Http\Controllers\OrderController::class, 'pay'])->name('orders.pay');
 Route::post('/orders/{orderId}/cancel', [\App\Http\Controllers\OrderController::class, 'cancel'])->name('orders.cancel');
 Route::get('orders-ajax', [OrderController::class, 'ajaxList'])->name('orders.ajax');
+
+Route::get('/staff/forgot', [FrontLoginController::class, 'showForgotForm'])->name('frontend.staff.forgot');
+
+// 2. Verify the submitted information
+Route::post('/staff/forgot/verify', [FrontLoginController::class, 'verifyStaffInfo'])->name('frontend.staff.verify');
+
+// 3. Show the final confirmation page after successful verification
+Route::get('/staff/reset-confirm', [FrontLoginController::class, 'showResetConfirmForm'])->name('frontend.staff.reset.confirm');
+
+// 4. Process the final reset action
+Route::post('/staff/reset-confirm', [FrontLoginController::class, 'processReset'])->name('frontend.staff.reset.process');

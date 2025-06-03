@@ -23,7 +23,7 @@ class RegisterController extends Controller
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'phone_number' => 'required|string|max:20',
-            'picture' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+            'picture' => 'nullable|image|mimes:jpeg,png,jpg|max:2048', 
             'email' => 'required|email|unique:users,email',
             'password' => [
                 'required',
@@ -34,13 +34,15 @@ class RegisterController extends Controller
             ],
         ]);
 
+        if ($validator->fails()) {
+            return redirect()->back()
+                        ->withErrors($validator)
+                        ->withInput();
+        }
+
         $staffPicturePath = null;
         if ($request->hasFile('picture')) {
-            $staffPicturePath = $request->file('picture')->storeAs(
-                'backend/img/user',
-                uniqid() . '_' . $request->file('picture')->getClientOriginalExtension(),
-                'public'
-            );
+            $staffPicturePath = $request->file('picture')->store('backend/img/user', 'public');
         }
 
         DB::beginTransaction();

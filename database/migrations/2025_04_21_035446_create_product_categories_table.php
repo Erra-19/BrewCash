@@ -15,6 +15,9 @@ return new class extends Migration
             $table->id('category_id');
             $table->string('category_name');
             $table->text('category_image')->nullable();
+            $table->string('store_id');
+            $table->foreign('store_id')->references('store_id')->on('stores')->onDelete('cascade');
+            $table->index('store_id');
             $table->timestamps();
         });
     }

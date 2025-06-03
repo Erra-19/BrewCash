@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('user_id');
             $table->string('store_name');
             $table->string('store_address');
-            $table->text('store_icon');
+            $table->text('store_icon')->nullable();
             $table->timestamps();
             $table->foreign('user_id')->references('user_id')->on('users')->onDelete('cascade');
             $table->index('user_id');

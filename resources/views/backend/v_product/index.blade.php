@@ -1,3 +1,4 @@
+{{-- PRODUCT INDEX --}}
 <x-backend.layoutDash>
     <div class="row">
         <div class="col-12">
@@ -7,16 +8,17 @@
                         <div class="alert alert-success">{{ session('success') }}</div>
                     @endif
 
-                    @if($products->isEmpty())
+                    @if(!session('active_store_id'))
+                        <div class="alert alert-warning mt-3">You must activate a store to view products.</div>
+                    @elseif($products->isEmpty())
                         <div class="text-center my-5">
-                            <h4>You Don't Have Any Product Yet.</h4>
+                            <h4>You haven't registered any product yet.</h4>
                             <a href="{{ route('backend.product.create') }}" class="btn btn-lg btn-success mt-3">Register Your First Product</a>
                         </div>
                     @else
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h5 class="card-title">{{ $title ?? 'Product' }}</h5>
+                        <h5 class="card-title">{{ $title ?? 'Product' }}<br><br>
                             <a href="{{ route('backend.product.create') }}" class="btn btn-outline-primary">Add Product</a>
-                        </div>
+                        </h5>
                         <div class="row">
                             @foreach($products as $item)
                                 <div class="col-md-4 mb-4">
@@ -44,11 +46,11 @@
                         </div>
                         {{-- Uncomment if using pagination --}}
                         {{-- <div class="mt-4">
-                            {{ $product->links() }}
+                            {{ $products->links() }}
                         </div> --}}
                     @endif
                 </div>
             </div>
         </div>
     </div>
-    </x-backend.layoutDash>
+</x-backend.layoutDash>
