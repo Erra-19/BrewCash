@@ -15,6 +15,7 @@
                             <thead>
                                 <tr>
                                     <th>No</th>
+                                    <th>Staff ID</th>
                                     <th>Email</th>
                                     <th>staffs Name</th>
                                     <th>Role in this store</th>
@@ -42,15 +43,32 @@
                                         @endif
                                     </td>
                                     <td>
-                                        {{-- Edit staffs, scoped to this store --}}
-                                        <a href="{{ route('backend.staff.edit', [$store->store_id, $staffs->user_id]) }}" title="Ubah Data"
-                                            class="btn btn-cyan btn-sm"><i class="far fa-edit"></i> Update</a>
-                                        <form method="POST" action="{{ route('backend.staff.destroy', [$store->store_id, $staffs->user_id]) }}" style="display: inline-block;">
-                                            @method('delete')
-                                            @csrf
-                                            <button type="submit" class="btn btn-danger btn-sm" title="Hapus Data" onclick="return confirm('Yakin ingin menghapus staffs ini dari toko?')">
-                                                <i class="fas fa-trash"></i> Delete</button>
-                                        </form>
+                                        {{-- Edit Staff (everyone authorized can see this button) --}}
+                                        <a href="{{ route('backend.staff.edit', [$store->store_id, $staffs->user_id]) }}" title="Edit Data" class="btn btn-cyan btn-sm"><i class="far fa-edit"></i> Update</a>
+                                        
+                                        {{-- Conditionally show the Delete button --}}
+                                        @php
+                                            $canDelete = false;
+                                            if (Auth::user()->isOwner()) {
+                                                $canDelete = true;
+                                            } else {
+                                                $isStoreAdmin = Auth::user()->isStaff() && Auth::user()->staffs->find($store->store_id)?->pivot->role === 'Admin';
+                                                $isProtectedRole = in_array($staffs->pivot->store_role, ['Admin', 'Manager']);
+                                                if ($isStoreAdmin && !$isProtectedRole) {
+                                                    $canDelete = true;
+                                                }
+                                            }
+                                        @endphp
+                                    
+                                        @if ($canDelete)
+                                            <form method="POST" action="{{ route('backend.staff.destroy', [$store->store_id, $staffs->user_id]) }}" style="display: inline-block;">
+                                                @method('delete')
+                                                @csrf
+                                                <button type="submit" class="btn btn-danger btn-sm" title="Delete Data" onclick="return confirm('Are you sure you want to remove this staff from the store?')">
+                                                    <i class="fas fa-trash"></i> Delete
+                                                </button>
+                                            </form>
+                                        @endif
                                     </td>
                                 </tr>
                                 @empty

@@ -57,40 +57,26 @@ class OrderController extends Controller
     \DB::beginTransaction();
 
     try {
-        // --- START: AGGREGATION LOGIC ---
-        // This block ensures that items with the same product_id and same modifiers
-        // are combined by summing their quantities.
+        $activeStoreId = session('active_store_id');
         $aggregatedItems = [];
         foreach ($payload['items'] as $item) {
-            // Create a unique "fingerprint" for the item based on its product_id and modifiers.
             $modifiers = $item['modifiers'] ?? [];
-
-            // Sort modifiers by 'id' to create a consistent key, regardless of selection order.
             usort($modifiers, fn($a, $b) => strcmp($a['id'], $b['id']));
-
-            // Use http_build_query to create a stable string representation from the modifiers array.
             $modifierKey = http_build_query($modifiers);
             $aggregationKey = $item['product_id'] . '|' . $modifierKey;
-
-            // Aggregate items based on this unique key.
             if (isset($aggregatedItems[$aggregationKey])) {
-                // If this exact item configuration already exists, just update the quantity.
                 $aggregatedItems[$aggregationKey]['qty'] += $item['qty'];
             } else {
-                // Otherwise, add the new item configuration to the list.
                 $aggregatedItems[$aggregationKey] = $item;
             }
         }
-        // --- END: AGGREGATION LOGIC ---
 
-        // Get staff prefix
         $prefix = strtoupper(substr($user->name, 0, 2));
 
-        // Lock the orders table and get the highest sequential number
         $lastOrder = \DB::table('orders')
             ->select('order_id')
             ->orderByDesc('created_at')
-            ->lockForUpdate() // prevents race conditions!
+            ->lockForUpdate()
             ->first();
 
         if ($lastOrder && preg_match('/OO(\d{3,})$/', $lastOrder->order_id, $matches)) {
@@ -149,17 +135,17 @@ class OrderController extends Controller
         Log::create([
             'user_id' => $user->user_id,
             'order_id' => $orderId,
+            'store_id' => $activeStoreId,
             'type' => 'order',
             'action' => 'Order placed',
-            'meta' => json_encode($payload), // It's often useful to log the original request
+            'meta' => $payload,
         ]);
 
         \DB::commit();
-
         return response()->json(['success' => true, 'order_id' => $orderId, 'total' => $total]);
     } catch (\Exception $e) {
         \DB::rollBack();
-        \Log::error('Order store error: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+        \Log::error('Order store error: ' . $e->getMessage());
         return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
     }
 }
@@ -198,6 +184,9 @@ class OrderController extends Controller
 }
     public function pay(Request $request, $orderId)
 {
+    \DB::beginTransaction();
+    try{
+        $activeStoreId = session('active_store_id');
     $order = Order::where('order_id', $orderId)->where('status', 'Open')->firstOrFail();
 
     $data = $request->validate([
@@ -215,34 +204,55 @@ class OrderController extends Controller
     ]);
 
     Log::create([
-        'user_id' => Auth::id(),
+        'user_id' => Auth::user()->user_id,
         'order_id' => $orderId,
+        'store_id' => $activeStoreId,
         'type' => 'order',
         'action' => 'Order paid',
-        'meta' => json_encode([
+        'meta' => [ // Pass the array directly
             'payment_method' => $data['payment_method'],
             'paid_amount' => $data['paid_amount'],
             'change' => $change,
-        ]),
+        ],
     ]);
+    \DB::commit();
+        return response()->json(['success' => true, 'change' => $change]);
 
-    return response()->json(['success' => true, 'change' => $change]);
+    } catch (\Exception $e) {
+        \DB::rollBack();
+        \Log::error('Order payment error for order '.$orderId.': ' . $e->getMessage());
+        return response()->json(['success' => false, 'error' => 'Could not process payment.'], 500);
+    }
 }
 public function cancel($orderId)
 {
-    $order = Order::where('order_id', $orderId)->where('status', 'Open')->firstOrFail();
-    $order->update([
-        'status' => 'Cancelled',
-        'cancelled_at' => now(),
-    ]);
-    Log::create([
-        'user_id' => Auth::id(),
-        'order_id' => $orderId,
-        'type' => 'order',
-        'action' => 'Order cancelled',
-        'meta' => '',
-    ]);
-    return response()->json(['success' => true]);
+    \DB::beginTransaction();
+    try {
+        $activeStoreId = session('active_store_id');
+        $order = Order::where('order_id', $orderId)->where('status', 'Open')->firstOrFail();
+        
+        $order->update([
+            'status' => 'Cancelled',
+            'cancelled_at' => now(),
+        ]);
+
+        Log::create([
+            'user_id' => Auth::user()->user_id,
+            'order_id' => $orderId,
+            'store_id' => $activeStoreId,
+            'type' => 'order',
+            'action' => 'Order cancelled',
+            'meta' => '',
+        ]);
+
+        \DB::commit();
+        return response()->json(['success' => true]);
+
+    } catch (\Exception $e) {
+        \DB::rollBack();
+        \Log::error('Order cancellation error for order '.$orderId.': ' . $e->getMessage());
+        return response()->json(['success' => false, 'error' => 'Could not cancel order.'], 500);
+    }
 }
 public function ajaxList(Request $request)
 {

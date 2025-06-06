@@ -14,7 +14,6 @@
                                 <div class="col-md-4">
                                     <div class="form-group">
                                         <label>Modifier Image</label>
-                                        {{-- view image --}}
                                         @if ($edit->mod_image)
                                             <img src="{{ asset('storage/img-modifiers/' . $edit->mod_image) }}" class="previewPicture" width="100%">
                                             <p></p>
@@ -22,10 +21,14 @@
                                             <img src="{{ asset('storage/img-modifiers/deficon.png') }}" class="previewPicture" width="100%">
                                             <p></p>
                                         @endif
-                                        {{-- file mod_image --}}
+                                        
                                         <input type="file" name="mod_image" class="form-control @error('mod_image') is-invalid @enderror" onchange="previewPicture()">
+                                        
+                                        {{-- ADJUSTMENT: Made the error message more robust and visible --}}
                                         @error('mod_image')
-                                            <div class="invalid-feedback alert-danger">{{ $message }}</div>
+                                            <div class="mt-1" style="color: #dc3545; font-size: 80%;">
+                                                {{ $message }}
+                                            </div>
                                         @enderror
                                     </div>
                                 </div>
@@ -35,24 +38,11 @@
                                         <label for="mod_name">Modifier Name</label>
                                         <input type="text" name="mod_name" id="mod_name" value="{{ old('mod_name', $edit->mod_name) }}" class="form-control @error('mod_name') is-invalid @enderror" placeholder="Enter Modifier Name">
                                         @error('mod_name')
-                                        <span class="invalid-feedback alert-danger" role="alert">
+                                        <span class="invalid-feedback" role="alert">
                                             {{ $message }}
                                         </span>
                                         @enderror
                                     </div>
-                                    <div class="form-group">
-                                        <label for="is_available">Availability</label>
-                                        <select name="is_available" id="is_available" class="form-control @error('is_available') is-invalid @enderror">
-                                            <option value="1" {{ old('is_available', (string)$edit->is_available) === '1' ? 'selected' : '' }}>Available</option>
-                                            <option value="0" {{ old('is_available', (string)$edit->is_available) === '0' ? 'selected' : '' }}>Not Available</option>
-                                        </select>
-                                        @error('is_available')
-                                        <span class="invalid-feedback alert-danger" role="alert">
-                                            {{ $message }}
-                                        </span>
-                                        @enderror
-                                    </div>
-
                                 </div>
                             </div>
                         </div>

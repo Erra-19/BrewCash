@@ -1,31 +1,61 @@
 <x-backend.layoutDash>
 <div class="container">
     <h2 class="mb-4">Logs / Reports</h2>
+    @if($requires_store ?? false)
+        <div class="alert alert-warning text-center">
+            <h4 class="alert-heading">No Active Store</h4>
+            <p>You must activate a store to view its activity report.</p>
+            <hr>
+            <a href="{{ route('backend.store.index') }}" class="btn btn-primary">Go to My Stores</a>
+        </div>
+    @else
     <form method="get" class="mb-3">
-        <div style="display:flex; flex-wrap:wrap; gap:1rem;">
-            <input type="text" name="action" value="{{ request('action') }}" placeholder="Action" class="form-control" style="width:150px;">
-            <select name="type" class="form-control" style="width:120px;">
-                <option value="">All Types</option>
-                <option value="order" {{ request('type')=='order'?'selected':'' }}>Order</option>
-                <option value="login" {{ request('type')=='login'?'selected':'' }}>Login</option>
-                <option value="payment" {{ request('type')=='payment'?'selected':'' }}>Payment</option>
-                <!-- add more as needed -->
-            </select>
-            <select name="user_id" class="form-control" style="width:180px;">
-                <option value="">All Users</option>
-                @foreach($users as $user)
-                <option value="{{ $user->user_id }}"{{ request('user_id')==$user->user_id?' selected':'' }}>{{ $user->name }}</option>
-                @endforeach
-            </select>
-            <select name="store_id" class="form-control" style="width:180px;">
-                <option value="">All Stores</option>
-                @foreach($stores as $store)
-                <option value="{{ $store->store_id }}"{{ request('store_id')==$store->store_id?' selected':'' }}>{{ $store->store_name }}</option>
-                @endforeach
-            </select>
-            <input type="date" name="start_date" value="{{ request('start_date') }}" class="form-control" style="width:140px;">
-            <input type="date" name="end_date" value="{{ request('end_date') }}" class="form-control" style="width:140px;">
+        <div style="display:flex; flex-wrap:wrap; gap:0.75rem; align-items:center;">
+            <div class="flex-grow-1" style="min-width: 150px;">
+                <input type="text" name="action" value="{{ request('action') }}" placeholder="Action Contains..." class="form-control">
+            </div>
+            <div class="flex-grow-1" style="min-width: 150px;">
+                <select name="type" class="form-select">
+                    <option value="">All Types</option>
+                    <option value="Authentication" {{ request('type') == 'Authentication' ? 'selected' : '' }}>Authentication</option>
+                    <option value="Staff" {{ request('type') == 'Staff' ? 'selected' : '' }}>Staff Management</option>
+                    <option value="Product" {{ request('type') == 'Product' ? 'selected' : '' }}>Products</option>
+                    <option value="Modifier" {{ request('type') == 'Modifier' ? 'selected' : '' }}>Modifiers</option>
+                    <option value="Category" {{ request('type') == 'Category' ? 'selected' : '' }}>Categories</option>
+                    <option value="Order" {{ request('type') == 'Order' ? 'selected' : '' }}>Orders</option>
+                </select>
+            </div>
+            <div class="flex-grow-1" style="min-width: 180px;">
+                <select name="user_id" class="form-select">
+                    <option value="">All Users</option>
+                    @foreach($users as $user)
+                        <option value="{{ $user->user_id }}"{{ request('user_id') == $user->user_id ? ' selected' : '' }}>{{ $user->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="flex-grow-1" style="min-width: 150px;">
+                <select name="store_role" class="form-select">
+                    <option value="">All Roles</option>
+                    @foreach($storeRoles as $role)
+                        <option value="{{ $role }}" {{ request('store_role') == $role ? 'selected' : '' }}>
+                            {{ $role }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="flex-grow-1" style="min-width: 140px;">
+                <input type="date" name="start_date" value="{{ request('start_date') }}" class="form-control" title="Start Date">
+            </div>
+            <div class="flex-grow-1" style="min-width: 140px;">
+                <input type="date" name="end_date" value="{{ request('end_date') }}" class="form-control" title="End Date">
+            </div>
             <button type="submit" class="btn btn-primary">Filter</button>
+            <button type="submit" name="print" value="1" class="btn btn-success" title="Download as PDF">
+                <i class="fas fa-file-pdf"></i>
+            </button>
+            <a href="{{ route('backend.logs.index') }}" class="btn btn-secondary" title="Reset Filters">
+                <i class="fas fa-sync-alt"></i>
+            </a>
         </div>
     </form>
     <div class="table-responsive">
@@ -69,5 +99,6 @@
         </table>
     </div>
     {{ $logs->links() }}
+    @endif
 </div>
 </x-backend.layoutDash>

@@ -23,7 +23,7 @@ class LoginController extends Controller
         ]);
 
         // dd(Auth::attempt($credentials));
-        if (Auth::attempt($credentials)) {
+        if (Auth::guard('web')->attempt($credentials)) {
             if (Auth::user()->role !== 'Owner') {
                 Auth::logout();
                 return back()->with('error', 'User not permitted!');
@@ -40,9 +40,7 @@ class LoginController extends Controller
 
     public function logoutBackend(Request $request)
     {
-        Auth::logout();
-        request()->session()->invalidate();
-        request()->session()->regenerateToken();
+        Auth::guard('web')->logout();
         return redirect(route('backend.login.form'));
     }
 }

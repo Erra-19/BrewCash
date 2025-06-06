@@ -60,9 +60,9 @@ class Product extends Model
             ->withTimestamps();
     }
     public function modifiers()
-{
-    return $this->belongsToMany(Modifier::class, 'product_modifiers', 'product_id', 'mod_id')
-        ->withPivot('mod_price')
-        ->where('is_available', 1);
-}
+    {
+        return $this->belongsToMany(Modifier::class, 'product_modifiers', 'product_id', 'mod_id')
+            ->withPivot('mod_price')
+            ->where('is_available', 1);
+    }
 }

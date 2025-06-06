@@ -13,19 +13,28 @@
                                 <div class="col-md-4">
                                     <div class="form-group">
                                         <label>Choose Your Modifier Image</label>
-                                        <img class="previewpicture">
-                                        <input type="file" name="mod_image" class="form-control @error('mod_image') is-invalid @enderror" onchange="previewpicture()">
+                                        
+                                        {{-- ADJUSTMENT 1: Added a default image source and corrected class name for consistency --}}
+                                        <img src="{{ asset('storage/img-modifiers/deficon.png') }}" class="previewPicture" width="100%">
+                                        <p></p> {{-- Added for spacing --}}
+                                        
+                                        <input type="file" name="mod_image" class="form-control @error('mod_image') is-invalid @enderror" onchange="previewPicture()">
+                                        
+                                        {{-- ADJUSTMENT 2: Made the error message more robust and visible --}}
                                         @error('mod_image')
-                                        <div class="invalid-feedback alert-danger">{{ $message }}</div>
+                                            <div class="mt-1" style="color: #dc3545; font-size: 80%;">
+                                                {{ $message }}
+                                            </div>
                                         @enderror
                                     </div>
                                 </div>
+                                
                                 <div class="col-md-8">
                                     <div class="form-group">
                                         <label>Modifier Name</label>
-                                        <input type="text" name="mod_name" class="form-control @error('mod_name') is-invalid @enderror" placeholder="Insert Your Modifier Name">
+                                        <input type="text" name="mod_name" value="{{ old('mod_name') }}" class="form-control @error('mod_name') is-invalid @enderror" placeholder="Insert Your Modifier Name">
                                         @error('mod_name')
-                                        <span class="invalid-feedback alert-danger" role="alert">
+                                        <span class="invalid-feedback" role="alert">
                                             {{ $message }}
                                         </span>
                                         @enderror
@@ -41,7 +50,7 @@
                                             @endforeach
                                         </select>
                                         @error('category_id')
-                                            <span class="invalid-feedback alert-danger" role="alert">
+                                            <span class="invalid-feedback" role="alert">
                                                 {{ $message }}
                                             </span>
                                         @enderror

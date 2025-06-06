@@ -55,20 +55,6 @@
                                         </span>
                                         @enderror
                                     </div>
-
-                                    <div class="form-group">
-                                        <label for="is_available">Availability</label>
-                                        <select name="is_available" id="is_available" class="form-control @error('is_available') is-invalid @enderror">
-                                            <option value="1" {{ old('is_available', (string)$edit->is_available) === '1' ? 'selected' : '' }}>Available</option>
-                                            <option value="0" {{ old('is_available', (string)$edit->is_available) === '0' ? 'selected' : '' }}>Not Available</option>
-                                        </select>
-                                        @error('is_available')
-                                        <span class="invalid-feedback alert-danger" role="alert">
-                                            {{ $message }}
-                                        </span>
-                                        @enderror
-                                    </div>
-
                                 </div>
                             </div>
                         </div>

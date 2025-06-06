@@ -94,14 +94,29 @@
                     <ul class="navbar-nav float-left mr-auto">
                         <li class="nav-item d-none d-md-block"><a class="nav-link sidebartoggler waves-effect waves-light" href="javascript:void(0)" data-sidebartype="mini-sidebar"><i class="mdi mdi-menu font-24"></i></a></li>
                         <div class="mx-auto d-none d-md-block" style="position:absolute;left:50%;transform:translateX(-50%);z-index:1;">
+                            @php
+                                // This PHP block to fetch $activeStore should be at the top of your layout,
+                                // or ensure $activeStore is passed to the layout component if this is a component.
+                                // For simplicity here, assuming it's already available as per your provided code.
+                                // $activeStore = session('active_store_id') ? \App\Models\Store::find(session('active_store_id')) : null;
+                            @endphp
                             @if($activeStore)
                                 <span class="h5 text-white">{{ $activeStore->store_name }}</span>
-                                <form action="{{ route('backend.store.deactivate') }}" method="POST" style="margin-top: 0.5rem;">
-                                    @csrf
-                                    <button class="btn btn-sm btn-danger" type="submit">Deactivate</button>
-                                </form>
+                                {{-- Show Deactivate button ONLY if the logged-in user is an Owner --}}
+                                @if (Auth::user()->isOwner())
+                                    <form action="{{ route('backend.store.deactivate') }}" method="POST" style="margin-top: 0.5rem;">
+                                        @csrf
+                                        <button class="btn btn-sm btn-danger" type="submit">Deactivate</button>
+                                    </form>
+                                @endif
                             @else
-                                <span class="text-muted">No Store Selected</span>
+                                @if (Auth::user()->isOwner()) {{-- Owners might not have a store selected initially --}}
+                                     <span class="text-muted">No Store Selected</span>
+                                @elseif(Auth::user()->isStaff() && session('staff_store_selection_mode') === 'multiple_admin')
+                                     <span class="text-muted">Select a Store</span> {{-- Or prompt for staff with multiple stores --}}
+                                @elseif(Auth::user()->isStaff() && session('staff_store_selection_mode') === 'staff_general')
+                                     <span class="text-muted">No specific store context</span>
+                                @endif
                             @endif
                         </div>
                         <!-- ============================================================== -->
@@ -146,7 +161,7 @@
                             <div class="dropdown-menu dropdown-menu-right user-dd animated">
                                 {{-- <a class="dropdown-item" href="{{ route('backend.user.edit', Auth::user()->id) }}"><i class="ti-user m-r-5 m-l-5"></i> My Profile</a> --}}
                                 <a class="dropdown-item" href="#"><i class="ti-user m-r-5 m-l-5"></i> My Profile</a>
-                                <a class="dropdown-item" href="" onclick="event.preventDefault(); document.getElementById('logout-app').submit();"><i class="fa fa-power-off m-r-5 m-l-5"></i> Logout </a>
+                                <a class="dropdown-item" href="#" onclick="event.preventDefault(); document.getElementById('logout-app').submit();"><i class="fa fa-power-off m-r-5 m-l-5"></i> Logout </a>
                                 <div class="dropdown-divider"></div>
                             </div>
                         </li>
@@ -257,9 +272,18 @@
     </script>
 
     <!-- form keluar app -->
-    <form id="logout-app" action="{{ route('backend.logout') }}" method="POST" class="d-none">
-        @csrf
-    </form>
+    @php
+    // Determine the correct logout route based on user role
+    $currentLogoutRoute = '';
+    if (Auth::user()->isStaff()) {
+        $currentLogoutRoute = route('backend.admin.logout'); // Staff use admin logout
+    } else {
+        $currentLogoutRoute = route('backend.logout'); // Owners use general backend logout
+    }
+@endphp
+<form id="logout-app" action="{{ $currentLogoutRoute }}" method="POST" class="d-none">
+    @csrf
+</form>
     <!-- form keluar app end -->
     <script src="https://kit.fontawesome.com/your-fontawesome-kit.js" crossorigin="anonymous"></script>
     <!-- sweetalert -->

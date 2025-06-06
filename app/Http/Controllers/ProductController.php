@@ -7,22 +7,21 @@ use App\Models\Product;
 use App\Models\ProductCategory;
 use App\Helpers\ImageHelper;
 use Illuminate\Validation\Rule;
+use App\Traits\LoggableActivity;
 
 class ProductController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
+    use LoggableActivity;
     public function index()
     {
         if (!session('active_store_id')) {
-            $products = collect();
+            $products = collect(); // Show nothing if no store is active
         } else {
             $products = Product::where('store_id', session('active_store_id'))
                 ->orderBy('product_id', 'desc')
                 ->get();
         }
-        $products = Product::orderBy('product_id', 'desc')->get();
+
         return view('backend.v_product.index', [
             'title' => 'Product',
             'sub' => 'Product Page',
@@ -81,9 +80,18 @@ class ProductController extends Controller
             $validatedData['product_image'] = $originalFileName;
         }
 
-        $validatedData['store_id'] = $store_id;
+        $validatedData['store_id'] = session('active_store_id');
 
-        Product::create($validatedData);
+        $product = Product::create($validatedData);
+        $this->logActivity(
+            type: 'Product',
+            action: 'Created new product',
+            meta: [
+                'product_id'   => $product->id,
+                'product_name' => $product->product_name,
+                'price'        => $product->product_price
+            ]
+        );
         return redirect()->route('backend.product.index')->with('success', 'Your Product has Been Saved');
     }
 
@@ -100,10 +108,21 @@ class ProductController extends Controller
             'category' => $category
         ]);
     }
+    public function toggle(Product $product)
+    {
+        $product->is_available = !$product->is_available;
+        $product->save();
+        $this->logActivity(
+            type: 'Product',
+            action: $product->is_available ? 'Activated product' : 'Deactivated product',
+            meta: [
+                'product_id'   => $product->id,
+                'product_name' => $product->product_name
+            ]
+        );
 
-    /**
-     * Show the form for editing the specified resource.
-     */
+        return back()->with('success', 'Product status updated successfully!');
+    }
     public function edit(string $product_id)
     {
         $product = Product::findOrFail($product_id);
@@ -114,10 +133,6 @@ class ProductController extends Controller
             'category' => $category
         ]);
     }
-
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request, string $product_id)
     {
         $product = Product::findOrFail($product_id);
@@ -129,7 +144,6 @@ class ProductController extends Controller
             ],
             'product_price' => 'required|numeric',
             'product_image' => 'nullable|image|mimes:jpeg,jpg,png|file|max:1024',
-            'is_available'  => 'required|boolean',
         ];
         $messages = [
             'product_name.unique'    => 'This product name is already taken.',
@@ -169,6 +183,15 @@ class ProductController extends Controller
         }
 
         $product->update($validatedData);
+        $this->logActivity(
+            type: 'Product',
+            action: 'Updated product details',
+            meta: [
+                'product_id'   => $product->id,
+                'product_name' => $product->product_name,
+                'updated_fields' => array_keys($validatedData) // Shows which fields were updated
+            ]
+        );
         return redirect()->route('backend.product.index')->with('success', 'Product Successfully Updated');
     }
 
@@ -192,6 +215,15 @@ class ProductController extends Controller
                 }
             }
         }
+        $this->logActivity(
+            type: 'Product',
+            action: 'Deleted product',
+            meta: [
+                'product_id'   => $product->id,
+                'product_name' => $product->product_name
+            ]
+        );
+
         $product->delete();
         return redirect()->route('backend.product.index')->with('success', 'Product deleted successfully.');
     }

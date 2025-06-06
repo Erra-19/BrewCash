@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class modifier extends Model
+class Modifier extends Model
 {
     protected $primaryKey = 'mod_id';
     public $incrementing = false;
@@ -13,6 +13,7 @@ class modifier extends Model
         'mod_id',
         'mod_name',
         'category_id',
+        'store_id',
         'mod_image',
         'is_available',
     ];

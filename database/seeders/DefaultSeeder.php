@@ -44,14 +44,5 @@ class DefaultSeeder extends Seeder
         foreach ($Store as $store) {
             Store::create($store);
         }
-        $Category = [
-            [
-            'category_name' => 'Add Ons'
-            ],
-        ];
-
-        foreach ($Category as $category) {
-            ProductCategory::create($category);
-        }
     }
 }

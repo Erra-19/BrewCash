@@ -39,10 +39,11 @@ class Log extends Model
             $user = $log->user_id;
             $order = $log->order_id ?? '0000';
             $store = $log->store_id ?? '0000';
-            $log->report_id = sprintf('L%04d-%s-%s-%s-%s', 
-    $log->id, $date, $user, $order, $store
-);
-            $log->save();
+
+            $reportId = sprintf('L%04d-%s-%s-%s-%s', 
+                $log->id, $date, $user, $order, $store
+            );
+            \DB::table('logs')->where('id', $log->id)->update(['report_id' => $reportId]);
         });
     }
 }

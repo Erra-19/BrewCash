@@ -7,15 +7,21 @@ use App\Models\Modifier;
 use App\Models\ProductCategory;
 use App\Helpers\ImageHelper;
 use Illuminate\Validation\Rule;
+use App\Traits\LoggableActivity;
 
 class ModifierController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
+    use LoggableActivity;
     public function index()
     {
-        $modifiers = Modifier::orderBy('mod_id', 'desc')->get();
+        if (!session('active_store_id')) {
+            $modifiers = collect();
+        } else {
+            $modifiers = Modifier::where('store_id', session('active_store_id'))
+                ->orderBy('mod_id', 'desc')
+                ->get();
+        }
+        
         return view('backend.v_modifier.index', [
             'title' => 'Modifier',
             'sub' => 'Modifier Page',
@@ -39,33 +45,49 @@ class ModifierController extends Controller
     /**
      * Store a newly created resource in storage.
      */
+    /**
+ * Store a newly created resource in storage.
+ */
     public function store(Request $request)
     {
+        if (!session('active_store_id')) {
+            return redirect()->route('backend.store.index')->with('error', 'Please activate a store first!');
+        }
+        $store_id = session('active_store_id');
+
         $validatedData = $request->validate([
             'mod_name' => 'required|max:255|unique:modifiers,mod_name',
-            'mod_image' => 'nullable|image|mimes:jpeg,jpg,png|file|max:1024',
-            // --- ADD THIS LINE ---
+            'mod_image'   => 'nullable|image|mimes:jpeg,jpg,png|max:1024',
             'category_id' => 'required|exists:product_categories,category_id',
         ], [
             'mod_name.unique' => 'This modifier name already exists.',
             'mod_image.image' => 'Picture format must be jpeg, jpg, or png.',
             'mod_image.max' => 'Picture max size is 1024 KB.',
-            // --- ADD A MESSAGE FOR THE NEW RULE (OPTIONAL) ---
             'category_id.required' => 'Please select a category.',
         ]);
-    
-        // NOTE: You have is_available = 0 hardcoded.
-        // If you want it to be dynamic, add it to validation and get from request.
-        $validatedData['is_available'] = 0; 
+
+        $validatedData['is_available'] = 0;
 
         if ($request->file('mod_image')) {
-            // ... your image handling code ...
+            $file = $request->file('mod_image');
+            $extension = $file->getClientOriginalExtension();
+            $originalFileName = date('YmdHis') . '_' . uniqid() . '.' . $extension;
+            $directory = 'storage/img-modifiers/'; // Corrected directory name
+            ImageHelper::uploadAndResize($file, $directory, $originalFileName);
             $validatedData['mod_image'] = $originalFileName;
         }
 
-        // Now, $validatedData will correctly contain the validated 'category_id'.
-        Modifier::create($validatedData);
-    
+        $validatedData['is_available'] = 0;
+        $validatedData['store_id'] = session('active_store_id');
+        $modifier = Modifier::create($validatedData);
+        $this->logActivity(
+            type: 'Modifier',
+            action: 'Created new modifier',
+            meta: [
+                'modifier_id'   => $modifier->mod_id,
+                'modifier_name' => $modifier->mod_name
+            ]
+        );
         return redirect()->route('backend.modifier.index')->with('success', 'Modifier has been saved.');
     }
 
@@ -82,10 +104,21 @@ class ModifierController extends Controller
             'category' => $categories
         ]);
     }
+    public function toggle(Modifier $modifier)
+    {
+        $modifier->is_available = !$modifier->is_available;
+        $modifier->save();
+        $this->logActivity(
+            type: 'Modifier',
+            action: $modifier->is_available ? 'Activated modifier' : 'Deactivated modifier',
+            meta: [
+                'modifier_id'   => $modifier->mod_id,
+                'modifier_name' => $modifier->mod_name
+            ]
+        );
 
-    /**
-     * Show the form for editing the specified resource.
-     */
+        return back()->with('success', 'Modifier status updated successfully!');
+    }
     public function edit(string $mod_id)
     {
         $modifier = Modifier::findOrFail($mod_id);
@@ -109,8 +142,7 @@ class ModifierController extends Controller
                 'max:255',
                 Rule::unique('modifiers', 'mod_name')->ignore($modifier->mod_id, 'mod_id'),
             ],
-            'mod_image' => 'nullable|image|mimes:jpeg,jpg,png|file|max:1024',
-            'is_available' => 'required|boolean',
+            'mod_image' => 'nullable|image|mimes:jpeg,jpg,png|max:1024',
         ];
         $messages = [
             'mod_name.unique' => 'This modifier name is already taken.',
@@ -118,7 +150,6 @@ class ModifierController extends Controller
             'mod_image.max'   => 'Picture max size is 1024 KB.'
         ];
         $validatedData = $request->validate($rules, $messages);
-        $validatedData['is_available'] = $request->boolean('is_available');
 
         if ($request->file('mod_image')) {
             // Remove old images
@@ -148,8 +179,16 @@ class ModifierController extends Controller
 
             $validatedData['mod_image'] = $originalFileName;
         }
-
         $modifier->update($validatedData);
+        $this->logActivity(
+            type: 'Modifier',
+            action: 'Updated modifier details',
+            meta: [
+                'modifier_id'   => $modifier->mod_id,
+                'modifier_name' => $modifier->mod_name,
+                'updated_fields' => array_keys($validatedData)
+            ]
+        );
         return redirect()->route('backend.modifier.index')->with('success', 'Modifier successfully updated.');
     }
 
@@ -158,6 +197,14 @@ class ModifierController extends Controller
      */
     public function destroy(string $mod_id)
     {
+        $this->logActivity(
+            type: 'Modifier',
+            action: 'Deleted modifier',
+            meta: [
+                'modifier_id'   => $modifier->mod_id,
+                'modifier_name' => $modifier->mod_name
+            ]
+        );
         $modifier = Modifier::findOrFail($mod_id);
         if ($modifier->mod_image) {
             $directory = public_path('storage/img-modifier/');

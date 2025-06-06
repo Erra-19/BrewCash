@@ -5,13 +5,16 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\User;
+use App\Models\Store;
 use App\Models\UserStore;
 use Illuminate\Support\Facades\Hash;
 use App\Helpers\PasswordHelper;
+use App\Traits\LoggableActivity;
 
 
 class FrontLoginController extends Controller
 {
+    use LoggableActivity;
     /**
      * Show the staff login form.
      */
@@ -25,28 +28,29 @@ class FrontLoginController extends Controller
      */
     public function login(Request $request)
     {
-        // Validate input
         $credentials = $request->validate([
             'user_id' => 'required|string',
             'password' => 'required|string',
         ]);
 
-        // Attempt to log in using user_id and password
-        if (Auth::attempt([
-            'user_id' => $credentials['user_id'],
-            'password' => $credentials['password'],
-            'role'     => ['Staff', 'Owner'],
-            'status'   => 1
-        ])) {
-            $request->session()->regenerate();
+        if (Auth::guard('cashier')->attempt($credentials)) {
+            $user = Auth::guard('cashier')->user();
 
+            if ($user->status != 1) {
+                Auth::guard('cashier')->logout();
+                return back()->withErrors(['login_error' => 'Your account is not active.'])->withInput();
+            }
+
+            $request->session()->regenerate();
+            $this->logActivity(
+                type: 'Authentication',
+                action: 'Staff logged in to frontend',
+                meta: ['ip_address' => $request->ip()]
+            );
             return redirect()->intended('/front/dashboard');
         }
 
-        // If login fails
-        return back()->withErrors([
-            'login_error' => 'User ID or password is incorrect, or you do not have staff access.',
-        ])->withInput();
+        return back()->withErrors(['login_error' => 'User ID or password is incorrect.'])->withInput();
     }
 
     /**
@@ -54,10 +58,7 @@ class FrontLoginController extends Controller
      */
     public function logout(Request $request)
     {
-        Auth::logout();
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
-
+        Auth::guard('cashier')->logout();
         return redirect()->route('frontend.login');
     }
     public function resetPassword($store_id, $user_id)

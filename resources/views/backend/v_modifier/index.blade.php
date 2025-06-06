@@ -7,9 +7,11 @@
                         <div class="alert alert-success">{{ session('success') }}</div>
                     @endif
 
-                    @if($modifier->isEmpty())
+                    @if(!session('active_store_id'))
+                        <div class="alert alert-warning mt-3">You must activate a store to view products.</div>
+                    @elseif($modifier->isEmpty())
                         <div class="text-center my-5">
-                            <h4>You Don't Have Any Modifier Yet.</h4>
+                            <h4>You haven't registered any product yet.</h4>
                             <a href="{{ route('backend.modifier.create') }}" class="btn btn-lg btn-success mt-3">Register Your First Modifier</a>
                         </div>
                     @else
@@ -28,9 +30,22 @@
                                             <h5 class="card-title">
                                                 {!! $item->is_available ? '<span class="badge bg-success">Active</span>' : '<span class="badge bg-secondary">Inactive</span>' !!}
                                             </h5>
-                                            <div class="d-flex">
-                                                <a href="{{ route('backend.modifier.edit', $item->mod_id) }}" class="btn btn-warning btn-sm me-2">Edit</a>
-                                                <form action="{{ route('backend.modifier.destroy', $item->mod_id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this Modifier?');" style="display:inline;">
+                                            <div class="d-flex align-items-center gap-2">
+                                                {{-- Edit Button --}}
+                                                <a href="{{ route('backend.modifier.edit', $item->mod_id) }}" class="btn btn-warning btn-sm">Edit</a>
+                                            
+                                                {{-- NEW: Form for the toggle button --}}
+                                                <form action="{{ route('backend.modifier.toggle', $item->mod_id) }}" method="POST" style="display:inline;">
+                                                    @csrf
+                                                    @if($item->is_available)
+                                                        <button type="submit" class="btn btn-secondary btn-sm">Deactivate</button>
+                                                    @else
+                                                        <button type="submit" class="btn btn-success btn-sm">Activate</button>
+                                                    @endif
+                                                </form>
+                                                
+                                                {{-- Delete Button --}}
+                                                <form action="{{ route('backend.modifier.destroy', $item->mod_id) }}" method="POST" onsubmit="return confirm('Are you sure?');" style="display:inline;">
                                                     @csrf
                                                     @method('DELETE')
                                                     <button type="submit" class="btn btn-danger btn-sm">Delete</button>
@@ -41,10 +56,6 @@
                                 </div>
                             @endforeach
                         </div>
-                        {{-- Uncomment if using pagination --}}
-                        {{-- <div class="mt-4">
-                            {{ $modifier->links() }}
-                        </div> --}}
                     @endif
                 </div>
             </div>

@@ -37,9 +37,18 @@
                     {{-- Custom Role for This Store --}}
                     <div class="form-group">
                         <label>Role in this store</label>
-                        <input type="text" name="store_role" value="{{ old('store_role') }}" class="form-control @error('store_role') is-invalid @enderror" placeholder="e.g., Cashier, Barista, Manager">
+                        <input type="text" name="store_role" list="store-roles-list" value="{{ old('store_role') }}" class="form-control @error('store_role') is-invalid @enderror" placeholder="Select or type a role (e.g., Cashier)">
+                        <datalist id="store-roles-list">
+                            @if (Auth::user()->isOwner())
+                                {{-- Owners can create any role --}}
+                                <option value="Manager">
+                                <option value="Admin">
+                            @endif
+                                {{-- All authorized users can create Cashiers --}}
+                            <option value="Cashier">
+                        </datalist>
                         @error('store_role')
-                        <span class="invalid-feedback alert-danger" role="alert">{{ $message }}</span>
+                            <span class="invalid-feedback alert-danger" role="alert">{{ $message }}</span>
                         @enderror
                     </div>
     

@@ -4,12 +4,12 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\ProductCategory;
+use App\Traits\LoggableActivity;
+use Illuminate\Validation\Rule; 
 
 class ProductCategoryController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
+    use LoggableActivity;
     public function index()
     {
         if (!session('active_store_id')) {
@@ -50,10 +50,19 @@ class ProductCategoryController extends Controller
         $validatedData = $request->validate([
             'category_name' => 'required|max:255|unique:product_categories,category_name',
         ]);
-        ProductCategory::create([
+        $category = ProductCategory::create([
             'category_name' => $validatedData['category_name'],
             'store_id' => $store_id,
         ]);
+
+        $this->logActivity(
+            type: 'Category',
+            action: 'Created new category',
+            meta: [
+                'category_id'   => $category->category_id,
+                'category_name' => $category->category_name
+            ]
+        );
         return redirect()->route('backend.category.index')->with('success', 'Data succesfully saved');
     }
 
@@ -83,10 +92,22 @@ class ProductCategoryController extends Controller
     public function update(Request $request, string $category_id)
     {
         $rules = [
-            'category_name' => 'required|max:255|unique:ProductCategory,category_name,' . $category_id,
+            'category_name' => [
+                'required',
+                'max:255',
+                Rule::unique('product_categories')->ignore($category->category_id, 'category_id'),
+            ],
         ];
         $validatedData = $request->validate($rules);
-        ProductCategory::where('category_id', $category_id)->update($validatedData);
+        $category->update($validatedData);
+        $this->logActivity(
+            type: 'Category',
+            action: 'Updated category details',
+            meta: [
+                'category_id'   => $category->category_id,
+                'new_name'      => $category->category_name
+            ]
+        );
         return redirect()->route('backend.category.index')->with('success', 'Data succesfully updated');
     }
 
@@ -96,6 +117,14 @@ class ProductCategoryController extends Controller
     public function destroy(string $category_id)
     {
         $category = ProductCategory::findOrFail($category_id);
+        $this->logActivity(
+            type: 'Category',
+            action: 'Deleted category',
+            meta: [
+                'category_id'   => $category->category_id,
+                'category_name' => $category->category_name
+            ]
+        );
         $category->delete();
         return redirect()->route('backend.category.index')->with('success', 'Data succesfully deleted');
     }
